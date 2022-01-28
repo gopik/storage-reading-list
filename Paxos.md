@@ -77,12 +77,12 @@ Here's the actual paxos algorithm.
 | Proposer | Acceptor |
 |----------|-----------|
 | 1. Choose a proposal number higher than any proposals seen and send a prepare request with the proposal| |
-| | 2a. Acceptor has not responded to any proposal higher than this. Acceptor marks no to every proposal lower than this, persists it's response and responds with [yes, highest proposal accepted and value for the proposal]
+| | 2a. Acceptor has not responded to any proposal higher than this. Acceptor marks no to every proposal lower than this, sets minAccept = proposalId. persists it's response and responds with [yes, highest proposal accepted and value for the proposal]
 | | 2b. Acceptor has responded to a proposal higher than this, hence responds with [no, highest proposal responded and value for the proposal]
 |3a. If there's a majority with "yes" response and there's an accepted value by any acceptor, propose that value from highest proposal id. ||
 |3b. If there's a majority with yes and there's no accepted value, propose the original intended value.||
 |3c. If there's no majority with "yes", restart with a higher proposal id. ||
-|| 4. HandleAccept: If an acceptor has not responded to a proposal higher than this, persists and returns [accept, value]. Otherwise returns[reject, highest accepted value]
+|| 4. HandleAccept: If an acceptor minAccept = proposal id, persists and returns [accept, value]. Otherwise returns[reject, highest accepted value]
 |5. At this point if majority has accepted a proposal, that proposal is "chosen". But it may not be known yet that a proposal is chosen.||
 |6. If a proposer gets an accept from majority from acceptors, the proposer knows that a proposal is chosen and can broadcast chosen value||
 |||
@@ -95,3 +95,57 @@ Step 1. Here the proposer has no knowledge that a value was chosen, so it will p
 Step 3. Here the proposer will learn that it was accepted by some acceptor. It must be the value with highest proposal id. This is proven inductively since any proposer right after the majority must follow the same algorithm and propose the same value.
 Step 5. If a proposer has reached this step, it must have received a yes from majority in prepare and this implies the value was chosen after acceptors responded yes to this proposal. If this is the case, the chosen value must have higher proposal id than the current proposal. Hence proposer's accept request will be rejected by a majority.
 
+This was from proposers perspective. Let's see why this holds from acceptors perspective. For liveness, the argument is similar to proposer, acceptors continue to accept values from higher proposal numbers based on their commitments to prepares. So to make a progress, a proposer will come with a higher proposal id and ensure progress via prepares.
+
+For safety, we need to prove that it's not possible for 2 different proposals to be accepted by a majority. To see this from acceptors' perspective:
+
+There will be at least one acceptor that has accepted both chosen values. Let's say the chosen values have proposal ids P1 and P2 and without loss of generality, P1 < P2. There are 4 messages that this acceptor would have received from corresponding proposers in some order (these messages are handled serially by the acceptor)
+
+P1.prepare, P1.accept, P2.prepare and P2.accept
+
+Let's consider P2.prepare's order with respect to P1.prepare and P1.accept. 
+
+* P2.prepare < P1.prepare => Not possible since this acceptor said yes to P1.prepare
+* P2.prepare > P1.prepare but P2.prepare < P1.accept => Not possible since acceptor would have rejected P1.accept in this case.
+* P2.prepare > P1.accept => This is possible but in this case acceptor would have responded with the previously accepted value to the proposer. The only reason this is possible is, if the message from this acceptor was lost and hence it can't be part of majority for P2. If it is part of majority, it must have responded to prepare positively which ensures this case can't happen.
+
+Hence it's important ensure that the value is accepted by a node only if it has responded positively to this proposal number in prepare phase and is the maximum such proposal. So it should accept only if minAccept for this acceptor is same as this proposal number.
+
+## Multi Paxos
+Although basic paxos can be proven correct, it's utility is limited due to the constraints and number of steps needed to achieve consensus. Note, in 2 phase only consensus is reached. But for it to be known, another broadcast phase is needed. To make this practical, here are few extensions which are used but have not been proven formally as the basic paxos. So there might be bugs in this.
+
+Here are the extensions -
+1. Instead of just agreeing on one value, agreement is on a sequence of values. This needs an index be part of the value. This needs a different run of paxos for each index.
+2. Performance - Use a separate leader election phase to ensure we can eliminate prepare requests for every index.
+3. Full Replication - Paxos only ensures a single value is agreed for a given index, but this value must be known by everyone maintaining the log for this to be useful. Hence this step is needed to actually have replicated log.
+4. Client protocol - This step introduces additional steps clients must follow to ensure client failures also don't violate safety.
+5. Configuration changes - Basic paxos assumes that the overall set of nodes is fixed although they may fail and come back up at any time.
+
+The main change is there's usually a single leader that is responsible for all the proposals. This is for performance only and correctness is not impacted by multiple leaders.
+
+### Lamport's leader election
+Each server has an id and server with maximum id is considered a leader. Each server sends it's id to other servers via heartbeat every Tms. If there's no heartbeat from the leader, another server with the highest id is considered to be the leader.
+
+### Eliminate prepare request
+To eliminate prepare step for each proposal, the prepare request is done once for the entire log. This prepare is valid for as long as the current leader is active and it's accept request is not rejected. If an accept is rejected, then another prepare is needed.
+
+[TBD: How does this work if not every node has responded to prepare request? Probably they reject the accept froom the leader and leader needs to send another prepare request.]
+
+### Full Replication
+Full replication is achieved with following steps:
+
+1. Leader keeps retrying accept requests in the background until all nodes have accepted it.
+2. Track chosen entries in the index. For every index i with accepted proposal, set minAcceptProposal[i] = Inf. This means no proposal will be accepted anymore for that index. For each accept request, leader sends firstUnchosenIndex. The acceptor knows that every index < firstUnchosenIndex, current proposal is choosen. Each leader has a proposal id everytime it sends a prepare request.
+3. Each acceptor includes firstUnchosenIndex as part of accept response. Based on this, leader can include logs less than it's firstUnchosenIndex as part of SuccessRPC
+
+### Configuration changes
+To allow for configuration changes, a new configuration is added to the log. It takes affect after $\alpha$ entries. This has an effect of limitting the conucrrency to $\alpha$.
+
+### Client Protocol
+To ensure that client failures doesn't effect the logs, each client includes with this request a unique request id that is increasing for each client. If a client sends a request again since it didn't hear the response last time, the state machine can ignore the request and respond with response for the last time the same client index was applied to the state. 
+
+[TBD: Does the server not add the duplicate entries to the log or the duplicate entries are added but not applied to the state machine.]
+
+## References
+1. Paxos algorithm - https://www.youtube.com/watch?v=JEpsBg0AO6o
+2. https://www.microsoft.com/en-us/research/publication/how-to-build-a-highly-available-system-using-consensus/
