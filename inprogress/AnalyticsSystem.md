@@ -2,7 +2,6 @@
 https://www.influxdata.com/blog/apache-arrow-parquet-flight-and-their-ecosystem-are-a-game-changer-for-olap/
 # Parquet
 # Arrow
-# influxdb iox
 # DeltaLake
 [Delta Lake: High-Performance ACID Table Storage over
 Cloud Object Stores](https://cs.stanford.edu/people/matei/papers/2020/vldb_delta_lake.pdf)
