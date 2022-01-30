@@ -135,7 +135,7 @@ To eliminate prepare step for each proposal, the prepare request is done once fo
 Full replication is achieved with following steps:
 
 1. Leader keeps retrying accept requests in the background until all nodes have accepted it.
-2. Track chosen entries in the index. For every index i with accepted proposal, set minAcceptProposal[i] = Inf. This means no proposal will be accepted anymore for that index. For each accept request, leader sends firstUnchosenIndex. The acceptor knows that every index < firstUnchosenIndex, current proposal is choosen. Each leader has a proposal id everytime it sends a prepare request.
+2. Track chosen entries in the index. For every index i with accepted proposal, set minAcceptProposal[i] = $\infty$. This means no proposal will be accepted anymore for that index. For each accept request, leader sends firstUnchosenIndex. The acceptor knows that every index < firstUnchosenIndex, current proposal is choosen. Each leader has a proposal id everytime it sends a prepare request.
 3. Each acceptor includes firstUnchosenIndex as part of accept response. Based on this, leader can include logs less than it's firstUnchosenIndex as part of SuccessRPC
 
 ### Configuration changes
