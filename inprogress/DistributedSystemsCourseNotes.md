@@ -118,3 +118,55 @@ Vector Clock Algorithm
 2. On each event, each process increments it's position in the vector clock.
 3. On send, process increments it's position and sends the vector as part of the message.
 4. On receive, process updates it's vector clock for each entry slot to max of it's value and value from the message. Then increment it's entry for receive event.
+
+# Chapter 4 - Executions, properties of execuctions and delivery order
+**Delivery Guarantees**
+* FIFO Delivery
+* Causal Delivery
+* Totally Ordered Delivery
+
+**Lamport Clock Property** - If A->B then LC(A) < LC(B), but LC(A) < LC(B) doesn't imply A->B
+
+**Vector clock property** - A -> B if and only if VC(A) < VC(B). Otherwise A and B are concurrent.
+
+**Vector Clock Algorithm**
+1. Every process is initialized with a vector of 0s with vector length same as the number of processes.
+2. Anytime an event occurs in a proecss, the vector clock is updated by incrementing the counter at the process index.
+3. Whenever a message is received, take pointwise max of incoming vector clock and local clock (after incrementing it for the current process receive)
+
+**Causal History event** - All events that happened before event.
+
+**Non comparable** - Concurrent event or causally independent.
+
+**Protocol** - Set of rules process use to communicate with each other.
+* **Valid Run of protocol** - If the protocol has not been violated **yet**.
+
+### FIFO Delivery
+ If a process sends a message m2 after message m1, then any process delivering both messages delivers m1 first.
+
+**Receive and Delivery** - Receive is the event that process received the message over the network. Delivery is the event when the process actually handles the event. Delivery order might be different than the receive order (say if a sequence number is used to order delivery even though they are received out of order). Sending a message is that a process does, receiving a message is something that happens to a process. Delivery is again something a process can do to a message that it receives.
+
+FIFO delivery is a part of TCP. Without TCP, we would have to use sequence number on each message and delay delivering a message until all messages with sequence number below it has been delivered.
+
+FIFO delivery makes sense only in the context of a specific pair of processes exchanging messages. For example, if there are 3 processes P1, P2 and P3, FIFO ordering doesn't make sense between a message m1 from P1 to P2 and another message m2 from P3 to P2.
+
+Vacuous FIFO delivery property by not delivering any messages. The FIFO ordering property will not be violated by dropping all messages.
+
+### Causal Delivery
+If m1's send `happens before` m2's send, then message m1's delivery must happen beffore m2's delivery. This can be implemented by the delivery of the event based on the vector clocks associated with the message.
+
+### Total Order Delivery
+If a process delivers m1 and then m2, then call processes delivering m1 and m2 must deliver m1 and then m2.
+
+**Violation of Total Order Delivery**
+
+|Time| Process 1| Process2 | Process 3| Process 4 |
+|---|----|----|----|----|
+|0|Send m1 to process 2 and 3|||Send m2 to process 2 and 3|
+|1||Receive m1 from process 1|Receive m2 from process 3|
+|2||Receive m2 from process 3|Receive m1 from process 1||
+
+In this example, process 2 delivers m1 and then m2. Process 3 delivers m2 and then m1. This violates total order delivery. This can be a problem say if process 2 and process 3 are KV store replicas. If both m1 and m2 update the same keys by sending messages to replicas, because of violating total order, the replicas go out of sync. Process 2 ends up storing the value from m2 since it received that later where as process 3 ends up storing the value from m1 since it received m1 later.
+
+
+
