@@ -66,8 +66,29 @@ These are pure compute nodes that provide SQL interface, compute a distributed e
 
 # Streaming update using Flink
 
+Here's how the pipeline would be organized -
+
+<img src="https://raw.githubusercontent.com/gopik/storage-reading-list/main/FlinkDeltaUpdate.drawio.svg">
+
+Initially the CDC is stream is partitioned according to the table partition columns. Then they are sent to the respective nodes. The nodes have list of all the files and their statistics stored locally. For example, a node managing partition 1, 2 and 3 has list of all files that are part of this partition and column statistics of the files. Note this list is from a specific version of the delta table.
+
+As the nodes receive changes from the stream, the tag the changes to specific files based on the column statistics. There's also inserts outside of these files that are stored separately as simple appends.
+
+Once a checkpoint barrier arrives, for each file that has changes, an API request is made to partition update service to update the file with relevant changes. Partition update service creates a new file and merges the changes from old file and updates and writes to new file. It returns the name of the new file to the node.
+
+Once all modified files are updated as above, the file pairs (old and new) are sent to the sink.
+
+The sink node receives updates from all the parittions. Once it receives a checkpoint barrier from all the partitions, it commits the file changes as a transaction to the table by making an API call to partition update service.
+
+The latency of updates depend on the checkpoint frequency of the pipeline which can be a table specific configuration.
+
+In addition to the transactional updates to the delta table, the nodes can keep writing all changes since last checkpoint to a node specific update table. Note that data from different nodes will be in independent tables and won't be consistent. For a low latency inconsistent queries, the query nodes can rewrite the query to include fresh data from update tables.
+
+# Conclusion
+
+We looked at a typical analytics system that refrehes data using an ETL pipeline and looked into an approach that can be used to reduce the latency of the analytics data.
 
 # References
-1. Debezium
-2. Deltalake
-3. Flink
+1. [Debezium](https://github.com/debezium/debezium)
+2. [Deltalake and DeltaTables](https://delta.io)
+3. [Flink](https://flink.apache.org/)
