@@ -72,7 +72,7 @@ Here's how the pipeline would be organized -
 
 Initially the CDC is stream is partitioned according to the table partition columns. Then they are sent to the respective nodes. The nodes have list of all the files and their statistics stored locally. For example, a node managing partition 1, 2 and 3 has list of all files that are part of this partition and column statistics of the files. Note this list is from a specific version of the delta table.
 
-As the nodes receive changes from the stream, the tag the changes to specific files based on the column statistics. There's also inserts outside of these files that are stored separately as simple appends.
+As the nodes receive changes from the stream, the node tag the changes to specific files based on the column statistics. There's also inserts outside of these files that are stored separately as simple appends. This is stored as a hashmap where the key is the file and value is the list of row updates.
 
 Once a checkpoint barrier arrives, for each file that has changes, an API request is made to partition update service to update the file with relevant changes. Partition update service creates a new file and merges the changes from old file and updates and writes to new file. It returns the name of the new file to the node.
 
