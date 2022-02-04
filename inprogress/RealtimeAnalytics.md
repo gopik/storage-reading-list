@@ -38,6 +38,36 @@ Second, deltatable file collection stores some column level statistics for every
 
 Third, instead of exporting the data from scratch, we collect all updates since the last export. Using the above, we identify the list of files (which are not too big, say 10s of MBs compressed). Then for each affected file, a new version is rewritten based on the updates (inserts/modifys/deletes). Once all files across partitions are rewritten, we update the delta table with a transaction that replaces the modified file paths in the collection. Once this transaction commits, the new data is now available to queries started after commit.
 
+## System
 At a high level this system appeas as below:
 
-<img src=>
+<img src="https://raw.githubusercontent.com/gopik/storage-reading-list/main/DeltaPartitionUpdate.svg">
+
+### DB
+This is the transactional component, this can be any number of DBs though. This is what services interact with for transactional load. Like reading rows by primary keys or indices, updating rows etc. All updates to DBs are captured via specific CDC (change data capture) and normalized to a common format (for example using Debezium) and fed to streaming pipeline. Note, the the targets for these updates can be many different analytic tables. Analytic and transactional schemas need not be identical. It's possible that analytic schema is join between different tables (or some other denormalized version). But for this discussion, we'll assume the schemas are identical. To handle more complex case, we'll need another pipeline which consumes the DB changes and output analytic changes.
+
+### Streaming Pipeline
+The objective of this component is to minimize reads and writes to the object store. The pipeline is built of multiple worker nodes that manage the updates in parallel. The scaling of the pipeline is acheived by adding more worker nodes. There are 2 key requirements to make this pipeline efficient -
+
+1. The part of the data handled by nodes is mutually exclusive and collectively exhaustive. Mutually exclusive ensurs there are no conflicts.
+
+2. All updates to a given primary key must be handled by the same node. This is required to aggregate updates to the primary key and generate a single update to object store. This is ensured by partitioning the data using primary key components (ideally static partitioning)
+
+The nodes accumulate the recent updates to the db and organize it by object store partitions. Once every few minutes, all the changes since last update are applied to the object store and pipeline is reset. How to do this is explained by using Flink as an example below.
+
+### Partition update service
+This service provides an interface for transactional updates to the delta table. The pipeline nodes individually contact and update files independent from each other. Once all updates are complete, a transaction is created to update the deltatable collection that makes all updates visible to the query nodes.
+
+### Object Store
+The object store is where all files are persisted and managed using a delta lake. The delta lake manages a catalog of delta tables. These tables are updated by the partition update service. Additionally, the updates can be persisted as independent tables to delta lake which can be combined with primary tables to provide very low latency updates to the real time analytics. To utilize the, the queries must be modified to union the update table with primary table and select the latest version of updated rows and query on top of this.
+
+### Query Nodes
+These are pure compute nodes that provide SQL interface, compute a distributed execution plan and scan the underlying delta tables. Example can be sparksql/presto/datafusion ballista etc.
+
+# Streaming update using Flink
+
+
+# References
+1. Debezium
+2. Deltalake
+3. Flink
