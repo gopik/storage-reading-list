@@ -84,9 +84,12 @@ The latency of updates depend on the checkpoint frequency of the pipeline which 
 
 In addition to the transactional updates to the delta table, the nodes can keep writing all changes since last checkpoint to a node specific update table. Note that data from different nodes will be in independent tables and won't be consistent. For a low latency inconsistent queries, the query nodes can rewrite the query to include fresh data from update tables.
 
+# Extensions for real time
+To be able to get real time results in the analytic queries, this system can be extended (at the risk of increased coupling) by exposing the streaming pipelines state as realtime tables. The query node can merge the results from delta tables and stream realtime tables if required.
+
 # Conclusion
 
-We looked at a typical analytics system that refrehes data using an ETL pipeline and looked into an approach that can be used to reduce the latency of the analytics data.
+We looked at a typical analytics system that refrehes data using an ETL pipeline and looked into an approach that can be used to reduce the latency of the analytics data. The batch pipelines that export the entire dataset are typically done using nigtly jobs that introduce a latency of 24 hours which can be brought down to the order of minutes using streaming ETLs and can be further brought down to seconds by exposing streaming pipeline state to the query nodes.
 
 # References
 1. [Debezium](https://github.com/debezium/debezium)
