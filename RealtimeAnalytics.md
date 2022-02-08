@@ -93,5 +93,5 @@ We looked at a typical analytics system that refrehes data using an ETL pipeline
 
 # References
 1. [Debezium](https://github.com/debezium/debezium)
-2. [Deltalake and DeltaTables](https://delta.io)
+2. [Deltalake and DeltaTables](https://github.com/delta-io/delta/blob/master/PROTOCOL.md)
 3. [Flink](https://flink.apache.org/)
