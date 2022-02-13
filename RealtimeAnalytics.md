@@ -87,6 +87,8 @@ In addition to the transactional updates to the delta table, the nodes can keep 
 # Extensions for real time
 To be able to get real time results in the analytic queries, this system can be extended (at the risk of increased coupling) by exposing the streaming pipelines state as realtime tables. The query node can merge the results from delta tables and stream realtime tables if required.
 
+For example, we can implement a presto connector that exposes cached updates in the pipeline as tables which can be then unioned with tables stored in object store to make the latest updates available. Note, this will have at most READ COMMITTED consistency, it won’t have dirty reads but the updates at different partitions won’t be consistent.
+
 # Conclusion
 
 We looked at a typical analytics system that refrehes data using an ETL pipeline and looked into an approach that can be used to reduce the latency of the analytics data. The batch pipelines that export the entire dataset are typically done using nigtly jobs that introduce a latency of 24 hours which can be brought down to the order of minutes using streaming ETLs and can be further brought down to seconds by exposing streaming pipeline state to the query nodes.
