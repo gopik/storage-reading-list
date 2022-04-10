@@ -168,5 +168,62 @@ If a process delivers m1 and then m2, then call processes delivering m1 and m2 m
 
 In this example, process 2 delivers m1 and then m2. Process 3 delivers m2 and then m1. This violates total order delivery. This can be a problem say if process 2 and process 3 are KV store replicas. If both m1 and m2 update the same keys by sending messages to replicas, because of violating total order, the replicas go out of sync. Process 2 ends up storing the value from m2 since it received that later where as process 3 ends up storing the value from m1 since it received m1 later.
 
+# Chapter 5
+
+## Recap of delivery properties
+* **FIFO Delivery** - If a process sends m1 before m2, then all processes delivering m1 and m2, deliver m1 before delivering m2.
+* **Causal Delivery** - If m1's send `happens before` m2's send, then m1 is delivered before m2 is delivered.
+* **TO delivery** - If a process delivers m1 before m2, then all processes deliver m1 before m2.
+
+### How are these delivery properties related
+Executions that satisfy **Causal Delivery** also satisfy **FIFO Delivery** since send order of the message define a causal dependency. But **TO Delivery** property is not related to the causal order of the messages but it can be any order. Only requirement is that all processes deliver in the same order. Hence ti's possible that in a system all executions might have **TO delievery** property but not have **FIFO** or **Causal**.
+
+## Implementing Causal broadcast (with vector clocks)
+- Unicast messages - Point to Point - 1 sender and 1 receiver
+- Multicast messages - 1 sender and many receivers.
+  - Broadcast messages - 1 sender and *everyone* (sender included?) receives.
+
+- Causal delivery vs causal broadcast
+  - Causal delivery is the property of executions that we care about.
+  - Causal broadcast is an algorithm that we use to ensure causal delivery.
+
+
+### Vector Clocks
+Twist - Don't count messsage receive as events.
+
+- When a process sends a message, it increments its own position in it's vector clock. It includes the updated vector clock with the message.
+- When a process delivers a message, it updates it's vector clock to the pointwise maximum of it's local vector clock and received vector clock on the message.
+
+Given that we are only implementing the delivery for broadcasts, looking at the vector clocks help us decide whether to delivery the message right away or wait. For example, if our vector clock is [0, 0, 0], and we receive a message from a process with vector clock [1, 0, 0], we know that there's only one event that we are not aware of since the difference is 1. That event is the send of this message. 
+
+But say if we receive a message from a process with vector clock [1, 1, 0], we know that there are 2 events that we are not aware of. One of them is this message, but there's another event that must be delivered before this. Hence we wait instead of delivering it immediately.
+
+Note: this assumption is only valid if all messages are broadcast. Otherwise, it's possible that the missing event was not intended for us and we can't wait.
+
+### Deliverability Condition
+A message m is deliverable at a process p if:
+
+* VC(m)[k] = VC(p)[k] + 1, k is the index of the sender process.
+* VC(m)[k] = VC(p)[k], k is index of all processes except sender process.
+
+Since we want to use just a single increment of vector clock to deliver a message, we don't want to assign events for delivery or receives.
+
+Given this ordering, every processes is going to deliver the message in same order if all messages are causally ordered. If all messages are causally ordered, this provides total order.
+
+Do we achieve total order with this? No. If a process P receives messages from 2 processes A and B, they won't be comparable and any order of delivery is consistent with causal delivery.
+
+
+## Chandy Lamport snapshot algorithm
+Snapshots of distributed systems - How to take snapshot of each process such that they are not inconsistent. For example, if we asked every process to take a snapshot at the same instant, they would be consistent with each other. But it's not possible to synchronize clocks - can't use time of day clocks.
+
+Required Property - If A `happened before` B and B is in the snapshot, A must be in the snapshot.
+
+### Terminology
+
+* **Channel** - Connection from one process to another. They are one way. For 2 process P1 and P2, we need a channel from P1->P2 and another for P2->P1.
+
+In flight messages are said to be **in** the channel. If a message has been sent from P1 and not received (or delivered?) at P2, it's considered to be in channel C12. Once delivered, the channel is empty.
+
+The channels are FIFO.
 
 
