@@ -226,4 +226,65 @@ In flight messages are said to be **in** the channel. If a message has been sent
 
 The channels are FIFO.
 
+# Chapter 6
+**Distributed Snapshot** - If we take snapshot of each process state such that it has event B in some process, then all events that `happened before` B are also in the snapshot.
 
+This is a consistent snapshot. This consisetnt is not same as consistency term used in other contexts.
+
+Chandy Lamport algorithm was published before vector clocks were mainstream (either not published or not popular). Hence this algorithm doesn't use vector clocks. But since then there have been variations that use vector clocks.
+## Chandy Lamport snapshot algorithm
+Recording a snapshot is kicked of by a process called `initiator` process. One or more processes can initiate a snapshot.
+
+- An initiator process
+  - records it's own state
+  - Sends a `marker message` out on all it's outgoing channels.
+  - Starts recording all messages it gets on all its incoming channels.
+- When process Pi receives a marker message on channel Cki
+  - If it is the first marker Pi has seen:
+    - Pi records its state
+    - Pi will mark the channel Cki as empty
+    - Pi will send the marker on all its outgoing channels
+    - Start recording messages on all incoming channels except Cki
+  - Otherwise (Pi has already seen a marker message)
+    - Pi will stop recording messages on channel Cki
+
+
+The marker message is sent on the same channel as the regular messages. So a receipt of marker message guarantees that the receiving processes has seen all causally preceeding messages before it sees the marker. Also, sending process sends the marker message after saving the state. The events not included in snapshot happen after the send event of marker message. So all the messages that are before the marker message correspond to events before the state was saved.
+
+This is guaranteed due to the channels having FIFO behavior.
+
+With N processes, total N(N-1) marker messages are sent.
+
+## Limitation/Assumptions/Properties of Chandy Lamport snapshot algorithm
+
+- Assumptions
+  - Channels have FIFO behavior. This is a requirement for Chandy Lamport snapshot algorithm to work.
+  - No need to pausing of application messages in Chandy-Lamport.
+  - CL algorithm assumes messages are not lost or corrupted or duplicated.
+  - Also assumes processes don't crash.
+
+- Properties
+  - Snapshot it takes are consistent.
+  - Guaranteed to terminate given assumptions of messages not lost etc.
+  - Works fine with more than one initiator of snapshot.
+
+## Centralized vs decentralized algorithms
+A `decentralized` algorithm is that can have multiple instances.
+
+examples: Chandy-Lamport, Paxos
+
+A `centralized` algorithm must be initiated by exactly one process.
+
+## Snapshots uses
+- Checkpoints - An algorithm doesn't have to start from scratch.
+- Deadlock detection - Deadlock is a property of a system that once it's true, it remains true. So if a snapshot has a deadlock, currently the system is still deadlocked.
+- Detection of any `stable property`: A property that is once true it remains true.
+
+# Chapter 7
+## Chandy Lamport wrapup
+**Channels** - We assume every process has a channel to every other process.
+The process needs to be strongly connected. This means process can reach to all processes but may be indirectly. With this we can simulate every process being connected to every other process.
+## Safety and Liveness
+## Reliable Delivery
+## Classifying faults and fault models
+## Two General Problem
