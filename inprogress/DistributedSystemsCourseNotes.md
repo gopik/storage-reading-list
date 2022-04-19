@@ -284,7 +284,40 @@ A `centralized` algorithm must be initiated by exactly one process.
 ## Chandy Lamport wrapup
 **Channels** - We assume every process has a channel to every other process.
 The process needs to be strongly connected. This means process can reach to all processes but may be indirectly. With this we can simulate every process being connected to every other process.
+
+* Snapshot
+  * Process State - Events that occurred
+  * Channel State - Messages recorded as part of recording channels.
 ## Safety and Liveness
+
+All properties are either safety or liveness or a combination.
+
+Delivery guarantees fall into safety properties. Safety properties say that something bad won't happen.
+
+Liveness properties say good thing will happen.
+eg. eventual delivery of messages.
+
+Usually liveness properties are specified with "eventually".
+
+- Safety Properties
+  - Say a "bad" thing won't happen.
+  - Can be violated in a finite execution.
+
+- Liveness Properties
+  - say that a "good thing" will eventually happen.
+  - cannot be violated in a finite execution (eg. If delivery didn't happen, it's just that the property is not satisfied yet. Not that it has been violated.)
+
 ## Reliable Delivery
+Let P1 be a process that sends a message `m` to process P2. If neither P1 nor P2 crashes, P2 eventually delivers the message.
+
 ## Classifying faults and fault models
+Fault models tell us which kinds of faults can occur.
+
+- **Omission Fault** - Message getting lost (A process fails to send or receive a single message).
+- **Timing fault** - Message slow - a process responds too late or too early.
+- **Crash fault** - Process fails by halting (stops sending/receiving messages). As far as external observer is concernted, it's crashed if it's not sending or receivng messages, even though process might be up.
+- **Byzantine fault** - A process behaves in an arbitrary or unpredictable ways or malicious ways.
+
+Crash faults are a special case of omission faults where all the messages froma a given process are lost. Hence any protocol that can tolerate omission faults can tolerate crash faults.
+
 ## Two General Problem
