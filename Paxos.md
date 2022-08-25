@@ -46,7 +46,7 @@ Objective is to agree on a single value with following properties -
 - `Acceptor` - A server that decides to accept a value. These are voting nodes whose count matters in which value gets chosen. These nodes are **passive** in the sense that their action is based only on local knowledge.
 Note: there's no preference for accepting a specific value here. The voter's decision is to ensure that algorithm converges and eventually terminates and is key part of the distributed algorithm. This is important since each node acts independently, the only thing that they ensure is, they follow some `Rules` while making decision and the objective is if all nodes follow the rules, then the cluster of nodes will end up with an agreement.
 - `Learners` - A client (or server) that doesn't participate in the decision making process but is interested in the decision.
-- `Persistence` - It's important to note that whenever a node responds to a message, it commits to the response since other decisions are taken based on this response. For example, if a node has responded saying that a value was accepted, it must ensure that a new response (potentially after restart) doesn't claim that no value was accepted. Typically this is ensured by storing some state in pesistent state (disk) that is not lost on restart. So to vote on a proposal, before responding the node must store it's vote before responding so that it continues to act according to it's previous response.
+- `Persistence` - It's important to note that whenever a node responds to a message, it commits to the response since other decisions are taken based on this response. For example, if a node has responded saying that a value was accepted, it must ensure that a new response (potentially after restart) doesn't claim that no value was accepted. Typically this is ensured by storing some state in pesistent state (disk) that is not lost on restart. So to vote on a proposal, the node must store it's vote before responding so that it continues to act according to it's previous response.
 
 ### Solution
 Here we'll build up to the actual paxos algorithm by building on some trivial steps and solving problems associated with each step.
@@ -54,7 +54,7 @@ Here we'll build up to the actual paxos algorithm by building on some trivial st
 #### Designated Chooser
 Let's assume there's one node that decides on the chosen value. It accepts the first value. This solves the consensus part where nodes agree on a value. But if this node crashes, the system is stuck and can't make progress.
 
-To solve this, we need multiple acceptors. This helps progress in 2 ways: If a node crashes, other nodes can continue to find the chosen value (since for a majority we don't need all nodes to be available). If a node crashes after a value was chosen, we can find this value from other acceptors.
+To solve this, we need multiple acceptors. This helps progress in 2 ways: If a node crashes, other nodes can continue to choose values (since for a majority we don't need all nodes to be available). If a node crashes after a value was chosen, we can find this value from other acceptors.
 
 #### Multiple acceptors
 
