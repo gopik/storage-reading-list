@@ -150,6 +150,11 @@ To eliminate prepare step for each proposal, the prepare request is done once fo
 
 [TBD: How does this work if not every node has responded to prepare request? Probably they reject the accept froom the leader and leader needs to send another prepare request.]
 
+### Independent paxos for each log entry
+Value for each log entry is chosen independently. First unchosen entry is selected from the log and a new value is proposed. If there's already some accepted value for that entry on any of the acceptor, a new proposal is started for that entry with the previously accepted value. If an old value was chosen for this entry, the leader attempts this with next unchosen entry.
+
+Acceptors maintain proposal versions for every log entry. For the chosen value, this value is infinity. As part of acceptProposal request, leader passes firstUnchosenEntry. Acceptor knows that all entries below this are chosen at the leader. For all of it's own entries where it has an accepted value but not chosen, and it has same proposal version as the current leader, it marks them now as chosen since it must have the same value as the leader.
+
 ### Full Replication
 Full replication is achieved with following steps:
 
