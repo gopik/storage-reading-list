@@ -74,6 +74,13 @@ To get a globaly consistent order, each proposal is given an id using counter an
 
 The acceptors now take the order of the proposal into account when working with multiple proposals. They promise to accept a higher ordered proposal and in turn proposers guarantee that they'll honor already chosen value.
 
+### Phase 1 - Broadcast Prepare RPCs
+1. Find about any chosen value.
+2. Block older proposals that have not yet completed.
+
+### Phase 2 - Broadcast Accept RPCs
+1. Ask acceptors to accept a specific value.
+
 Here's the actual paxos algorithm.
 
 | Proposer | Acceptor |
