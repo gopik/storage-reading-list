@@ -14,7 +14,7 @@ Initially, the 1st condition is trivially satisfied. Since there's no value set 
 
 Replicated state machines receive same commands in the same order under following conditions
 
-* Majority - System makes process as long as majority of servers are up (respond to messages from each other)
+* Majority - System makes progress as long as majority of servers are up (respond to messages from each other)
 * Failure Model
     * Fail stop (non byzantine) - Servers fail by failing to receive messages and responding to messages, examples - crashes, disconnect from network etc.
     * Delayed/lost/out of order messages - Message can take arbitrarily long to be delivered, 
