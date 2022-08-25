@@ -112,6 +112,7 @@ Step 3. At this point, if any of the responded acceptors heard from P1, P2 would
 
 Step 5. Since we know that P1 was chosen and P1 > P2, there could be few nodes that accepted both P1 and P2. But such nodes can't be a majority, since if majority accepted both P1 and P2, they must have accepted P1 after P2. This implies they accepted before P1's prepare RPC, which means P1 would have learnt about P2's value in it's prepare phase. Since P1 didn't learn, it means P2 was not accepted by a majority. Hence step 5 would have failed for P2.
 
+### Acceptor perspective
 
 This was from proposers perspective. Let's see why this holds from acceptors perspective. For liveness, the argument is similar to proposer, acceptors continue to accept values from higher proposal numbers based on their commitments to prepares. So to make a progress, a proposer will come with a higher proposal id and ensure progress via prepares.
 
