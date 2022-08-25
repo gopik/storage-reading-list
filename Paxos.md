@@ -21,7 +21,7 @@ Replicated state machines receive same commands in the same order under followin
 
 ## Paxos - Basic and Multiple
 
-* **Basic Paxos** - Basic paxos algorithm is a single decree algorithm that allows agreement on single value. This is the example from the introduction. This is an extremely important result from distributed systems theory perspective, it has been discussed a lot in the literature and formally proved. But it is not a very useful practically. For example, it doesn't specify a behavior when the set of servers need to be changed (say from 3 to 5.For a practical system, we are interested in agreement on a sequence of values. Then this can be used to record a consistent sequence of commands across multiple servers so that all servers end up in same state. This sequence of values is called a `Replicated Log`.
+* **Basic Paxos** - Basic paxos algorithm is a single decree algorithm that allows agreement on single value. This is the example from the introduction. This is an extremely important result from distributed systems theory perspective, it has been discussed a lot in the literature and formally proved. But it is not a very useful practically. For example, it doesn't specify a behavior when the set of servers need to be changed (say from 3 to 5). For a practical system, we are interested in agreement on a sequence of values. Then this can be used to record a consistent sequence of commands across multiple servers so that all servers end up in same state. This sequence of values is called a `Replicated Log`.
 
 * **Multi Paxos** - Multi paxos is an extension of basic paxos that addresses practical concerns. This extension handles the needs for a practical replicated state machine like agreeing on sequence of values, efficiency, recovery, configuration changes etc.
 
@@ -32,7 +32,7 @@ Objective is to agree on a single value with following properties -
 
 ### Safety
 * Only one value is chosen.
-* The chosen value must be one of the proposed values (This is not really a safety property but a non trivial property, this excludes always chosing an empty value)
+* The chosen value must be one of the proposed values (This is not really a safety property but a non trivial property, this excludes always choosing an empty value)
 * Once a value is chosen, it doesn't change.
 
 ### Liveness
