@@ -100,9 +100,18 @@ Liveness of this protocol is guaranteed if a single proposer is able to run the 
 
 Safety of this proposal is guaranteed by the fact that once a proposal achieves majority (by the fact of majority acceptors persisting it as accepted), the algorithm ensures the same value is chosen. To see why this is the case, consider a new proposer that might be in different steps at the instant a proposal gets majority -
 
-Step 1. Here the proposer has no knowledge that a value was chosen, so it will propose a new value.
-Step 3. Here the proposer will learn that it was accepted by some acceptor. It must be the value with highest proposal id. This is proven inductively since any proposer right after the majority must follow the same algorithm and propose the same value.
-Step 5. If a proposer has reached this step, it must have received a yes from majority in prepare and this implies the value was chosen after acceptors responded yes to this proposal. If this is the case, the chosen value must have higher proposal id than the current proposal. Hence proposer's accept request will be rejected by a majority.
+### Case 1 - This proposer has a higher proposal id (P2, and assumption is P1 was chosen and P1 < P2)
+
+Step 1. Here the proposer has no knowledge that a value was chosen, so it will send prepare request.
+
+Step 3. If at this point proposer doesn't see any accepted value, this implies that no value was chosen which is not possible. Since, after this point, P1 can't be chosen but we know that P1 was chosen, hence P2 must learn of the chosen value as an accepted value and it will end up proposing the same value in P2.
+
+### Case 2 - This proposer has a lower proposal id (P2, and assumption is P1 was chosen and P1 > P2)
+
+Step 3. At this point, if any of the responded acceptors heard from P1, P2 would abort. If none of the responded acceptors heard about P1, this implies that P1 didn't get responses from a majority before P2 sent this request. Here P2 would propose a value.
+
+Step 5. Since we know that P1 was chosen and P1 > P2, there could be few nodes that accepted both P1 and P2. But such nodes can't be a majority, since if majority accepted both P1 and P2, they must have accepted P1 after P2. This implies they accepted before P1's prepare RPC, which means P1 would have learnt about P2's value in it's prepare phase. Since P1 didn't learn, it means P2 was not accepted by a majority. Hence step 5 would have failed for P2.
+
 
 This was from proposers perspective. Let's see why this holds from acceptors perspective. For liveness, the argument is similar to proposer, acceptors continue to accept values from higher proposal numbers based on their commitments to prepares. So to make a progress, a proposer will come with a higher proposal id and ensure progress via prepares.
 
