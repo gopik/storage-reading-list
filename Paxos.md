@@ -87,9 +87,9 @@ Here's the actual paxos algorithm.
 |----------|-----------|
 | 1. Choose a proposal number higher than any proposals seen and send a prepare request with the proposal| |
 | | 2a. Acceptor has not responded to any proposal higher than this. Acceptor marks no to every proposal lower than this, sets minAccept = proposalId. persists it's response and responds with [yes, highest proposal accepted and value for the proposal]
-| | 2b. Acceptor has responded to a proposal higher than this, hence responds with [no, highest proposal responded and value for the proposal]
+| | 2b. Acceptor has responded to a proposal higher than this, hence responds with [no, highest proposal responded and value for the proposal (if known)]
 |3a. If there's a majority with "yes" response and there's an accepted value by any acceptor, propose that value from highest proposal id. ||
-|3b. If there's a majority with yes and there's no accepted value, propose the original intended value.||
+|3b. If there's a majority with yes and there's no accepted value from any acceptor, propose the original intended value.||
 |3c. If there's no majority with "yes", restart with a higher proposal id. ||
 || 4. HandleAccept: If an acceptor minAccept = proposal id, persists and returns [accept, value]. Otherwise returns[reject, highest accepted value]
 |5. At this point if majority has accepted a proposal, that proposal is "chosen". But it may not be known yet that a proposal is chosen.||
